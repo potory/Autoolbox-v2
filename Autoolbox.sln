@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Autoolbox.App", "Autoolbox.App\Autoolbox.App.csproj", "{2C818A49-C5CB-4001-A9EE-9F3C5476A745}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{2198E1C8-2B25-4AC2-BC38-C647F06E843A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SonScript2.Core", "Plugins\SonScript2\SonScript2.Core\SonScript2.Core.csproj", "{A303070D-E64D-41BD-B176-979D650B4BE4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2C818A49-C5CB-4001-A9EE-9F3C5476A745}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C818A49-C5CB-4001-A9EE-9F3C5476A745}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C818A49-C5CB-4001-A9EE-9F3C5476A745}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C818A49-C5CB-4001-A9EE-9F3C5476A745}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A303070D-E64D-41BD-B176-979D650B4BE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A303070D-E64D-41BD-B176-979D650B4BE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A303070D-E64D-41BD-B176-979D650B4BE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A303070D-E64D-41BD-B176-979D650B4BE4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A303070D-E64D-41BD-B176-979D650B4BE4} = {2198E1C8-2B25-4AC2-BC38-C647F06E843A}
+	EndGlobalSection
+EndGlobal
