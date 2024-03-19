@@ -5,6 +5,7 @@ using Spectre.Console.Cli;
 
 var registrations = new ServiceCollection()
     .AddConfiguration()
+    .AddAutomaticDependencies()
     .AddSonScriptDependencies();
 
 var registrar = new TypeRegistrar(registrations);
