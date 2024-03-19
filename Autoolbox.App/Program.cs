@@ -1,3 +1,14 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿using Autoolbox.App.Infrastructure;
+using Autoolbox.App.Infrastructure.Installers;
+using Microsoft.Extensions.DependencyInjection;
+using Spectre.Console.Cli;
 
-Console.WriteLine("Hello, World!");
+var registrations = new ServiceCollection()
+    .AddConfiguration()
+    .AddSonScriptDependencies();
+
+var registrar = new TypeRegistrar(registrations);
+var app = new CommandApp(registrar);
+
+app.Configure(c => c.AddSonScriptCommands());
+await app.RunAsync(args);
