@@ -1,6 +1,8 @@
-﻿namespace Autoolbox.App.Utility;
+﻿using System.Collections;
 
-public class BracketsStack : Stack<char>
+namespace Autoolbox.App.Utility;
+
+public class Brackets : IEnumerable<char>
 {
     private readonly Stack<char> _stack = new();
 
@@ -51,4 +53,8 @@ public class BracketsStack : Stack<char>
             _ => false
         };
     }
+
+    public IEnumerator<char> GetEnumerator() => _stack.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
