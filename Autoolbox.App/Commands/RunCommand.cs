@@ -3,8 +3,10 @@ using Autoolbox.App.Exceptions;
 using Autoolbox.App.Overrides;
 using Autoolbox.App.Services.Abstraction;
 using Autoolbox.App.Services.Implementation;
+using Autoolbox.App.Utility;
 using Newtonsoft.Json.Linq;
 using SonScript2.Core.Compilation.Abstraction;
+using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace Autoolbox.App.Commands;
@@ -23,6 +25,8 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
     private readonly IRequestFactory _requestFactory;
     private readonly IRequestSender _requestSender;
 
+    private readonly Dictionary<int, string> _resultCache = new();
+
     public RunCommand(IConfigReader configReader, ICompiler compiler,
         IRequestFactory requestFactory, IRequestSender requestSender)
     {
@@ -32,44 +36,51 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
         _requestSender = requestSender;
     }
     
-    public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
+    public override async Task<int> ExecuteAsync(CommandContext commandContext, Settings settings)
     {
-        var resultCache = new Dictionary<int, string>();
-        
+        var deltaProgress = 1 / (float)settings.Count * 100;
+
+        AnsiConsole.WriteLine("Getting config segments...");
         var segments = GetConfigSegments(settings.ConfigPath);
-        var sequences = GetConfigSequences(segments);
+        AnsiConsole.WriteLine("Getting config sequences...");
+        var sequences = GetConfigSequences(segments).ToArray();
 
-        int level = 0;
-
-        foreach (var sequence in sequences)
+        AnsiConsole.WriteLine("Generation started...");
+        await LeveledProgressHandler.Handle(sequences.Length, async (level, progressTask) =>
         {
-            var sequenceContext = GetSequenceContext(sequence);
+            var sequence = sequences[level];
+
+            var context = GetSequenceContext(sequence);
             var directory = HandleDirectory(settings.OutputPath, level);
-
-            sequenceContext.Level = level;
+            context.Level = level;
             
-            for (int index = 0; index < settings.Count; index++)
+            for (var i = 0; i < settings.Count; i++)
             {
-                sequenceContext.Iteration = index;
-
-                var previousResult = GetPreviousResult(resultCache, index);
-                
-                var requestOption = await _requestFactory.CreateAsync(sequence, previousResult);
-                if (!requestOption.IsValid)
-                {
-                    continue;
-                }
-                
-                var result = await SendRequest(requestOption);
-                var path = await SaveResult(directory, $"{index:0000}.png", result);
-
-                resultCache[index] = path;
+                context.Iteration = i;
+                await GenerateFromSequence(sequence, context, directory);
+                progressTask.Increment(deltaProgress);
             }
-
-            level++;
-        }
+            
+            progressTask.StopTask();
+        });
         
         return 0;
+    }
+
+    private async Task GenerateFromSequence(INodeSequence sequence, AutomaticContext context, string directory)
+    {
+        var previousResult = GetPreviousResult(_resultCache, context.Iteration);
+        var requestOption = await _requestFactory.CreateAsync(sequence, previousResult);
+
+        if (!requestOption.IsValid)
+        {
+            return;
+        }
+
+        var result = await SendRequest(requestOption);
+        var path = await SaveResult(directory, $"{context.Iteration:0000}.png", result);
+
+        _resultCache[context.Iteration] = path;
     }
 
     private static string GetPreviousResult(IReadOnlyDictionary<int, string> cache, int index)
