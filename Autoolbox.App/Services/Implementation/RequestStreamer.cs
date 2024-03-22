@@ -1,5 +1,6 @@
 ﻿using Autoolbox.App.Exceptions;
 using Autoolbox.App.Services.Abstraction;
+using LanguageExt.Common;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 
@@ -7,19 +8,35 @@ namespace Autoolbox.App.Services.Implementation;
 
 public class RequestStreamer : IRequestStreamer
 {
-    private readonly string _injection;
+    private readonly string _injectionMarker;
 
     public RequestStreamer(IConfiguration configuration)
     {
-        _injection = configuration[Contracts.Config.Injection.PreviousResult]!;
+        _injectionMarker = configuration[Contracts.Config.Injection.PreviousResult]!;
         
-        if (string.IsNullOrEmpty(_injection))
+        if (string.IsNullOrEmpty(_injectionMarker))
         {
             throw new AutoolboxConfigurationException("...");
         }
     }
-    
-    public async Task<Stream> StreamToMemoryAsync(JToken request)
+
+    public async Task<RequestOption> StreamToMemoryAsync(JObject request, string? imagePath)
+    {
+        if (!RequireInjection(request))
+        {
+            return new RequestOption(await StreamToMemoryAsync(request), RequestType.TextToImage);
+        }
+
+        if (string.IsNullOrEmpty(imagePath) || !File.Exists(imagePath))
+        {
+            return new RequestOption(new AutomaticExecutionException("..."));
+        }
+            
+        var stream = await StreamToMemoryWithInjectionAsync(request, imagePath);
+        return new RequestOption(stream, RequestType.ImageToImage);
+    }
+
+    private async Task<Stream> StreamToMemoryAsync(JObject request)
     {
         var stream = new MemoryStream();
         var streamWriter = new StreamWriter(stream);
@@ -28,7 +45,7 @@ public class RequestStreamer : IRequestStreamer
         return await FinishWrite(streamWriter, stream);
     }
 
-    public async Task<Stream> StreamToMemoryAsync(JToken request, string imagePath)
+    private async Task<Stream> StreamToMemoryWithInjectionAsync(JToken request, string imagePath)
     {
         var stream = new MemoryStream();
         var streamWriter = new StreamWriter(stream);
@@ -49,8 +66,8 @@ public class RequestStreamer : IRequestStreamer
             streamWriter.Write(json.AsSpan(segmentStart, segmentLength));
             await streamWriter.WriteAsync(imageString);
 
-            segmentStart = injectionIndex + _injection.Length;
-            injectionIndex = json.IndexOf(_injection, segmentStart, StringComparison.Ordinal);
+            segmentStart = injectionIndex + _injectionMarker.Length;
+            injectionIndex = json.IndexOf(_injectionMarker, segmentStart, StringComparison.Ordinal);
         }
 
         streamWriter.Write(json.AsSpan(segmentStart, json.Length - segmentStart));
@@ -68,5 +85,12 @@ public class RequestStreamer : IRequestStreamer
 
     private static async Task<string> ReadImageAsBase64String(string previousImagePath) => Convert.ToBase64String(await File.ReadAllBytesAsync(previousImagePath));
 
-    private int FindInjectionIndex(string content, int start) => content.IndexOf(_injection, start, StringComparison.Ordinal);
+    private int FindInjectionIndex(string content, int start) => content.IndexOf(_injectionMarker, start, StringComparison.Ordinal);
+    
+    private bool RequireInjection(JContainer container)
+    {
+        return container
+            .Descendants()
+            .Any(token => token is JValue { Value: string str } && str == _injectionMarker);
+    }
 }

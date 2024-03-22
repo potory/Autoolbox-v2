@@ -1,5 +1,6 @@
 ﻿using Autoolbox.App.Configuration.Abstraction;
 using Autoolbox.App.Configuration.Implementation;
+using Autoolbox.App.Overrides;
 using Autoolbox.App.Services;
 using Autoolbox.App.Services.Abstraction;
 using Autoolbox.App.Services.Implementation;
@@ -32,6 +33,7 @@ public static class ServicesInstaller
         collection.AddTransient<IConfigReader, ConfigReader>();
         collection.AddTransient<IRequestFactory, RequestFactory>();
         collection.AddTransient<IRequestStreamer, RequestStreamer>();
+        collection.AddTransient<IRequestSender, RequestSender>();
         collection.AddTransient<ILogger, Logger>();
         
         return collection;
@@ -43,7 +45,7 @@ public static class ServicesInstaller
 
         collection.AddTransient<IDecomposer, DefaultDecomposer>();
         collection.AddTransient<INodeFactory, DefaultNodeFactory>();
-        collection.AddTransient<IContextFactory, DefaultContextFactory>();
+        collection.AddTransient<IContextFactory, AutomaticContextFactory>();
         collection.AddTransient<ICompiler, DefaultCompiler>();
         collection.AddSingleton<ILibrary, DefaultLibrary>();
         collection.AddTransient<IFileContext, DefaultFileContext>();
