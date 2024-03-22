@@ -1,5 +1,8 @@
 ﻿using Autoolbox.App.Configuration.Abstraction;
 using Autoolbox.App.Configuration.Implementation;
+using Autoolbox.App.Services;
+using Autoolbox.App.Services.Abstraction;
+using Autoolbox.App.Services.Implementation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SonScript2.Core.Compilation.Abstraction;
@@ -27,6 +30,10 @@ public static class ServicesInstaller
     public static IServiceCollection AddAutomaticDependencies(this IServiceCollection collection)
     {
         collection.AddTransient<IConfigReader, ConfigReader>();
+        collection.AddTransient<IRequestFactory, RequestFactory>();
+        collection.AddTransient<IRequestStreamer, RequestStreamer>();
+        collection.AddTransient<ILogger, Logger>();
+        
         return collection;
     }
 

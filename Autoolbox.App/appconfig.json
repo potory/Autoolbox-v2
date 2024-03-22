@@ -1,2 +1,15 @@
 {
+  "directories":{
+    "logs": "Logs"
+  },
+  "endpoints": {
+    "txt2img": "http://127.0.0.1:7860/sdapi/v1/txt2img",
+    "img2img": "http://127.0.0.1:7860/sdapi/v1/img2img"
+  },
+  "defaults": {
+    "request": "Defaults/request.json"
+  },
+  "injection": {
+    "previousResult": "#PREVIOUS_RESULT_INJECT#"
+  }
 }
