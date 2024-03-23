@@ -2,7 +2,7 @@
 using Autoolbox.App.Exceptions;
 using Autoolbox.App.Extensions;
 using Autoolbox.App.Services.Abstraction;
-using LanguageExt.Common;
+using Autoolbox.App.Wrappers;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 using SonScript2.Core.Compilation.Abstraction;
@@ -31,10 +31,17 @@ public class RequestFactory : IRequestFactory
         _defaultRequest = JObject.Parse(content);
     }
 
-    public async Task<RequestOption> CreateAsync(INodeSequence sequence, string? previousResultPath = null)
+    public async Task<RequestOption> CreateAsync(INodeSequence sequence, RequestWrapper previousRequest, string? previousResultPath = null)
     {
+        var initialRequest = _defaultRequest;
+
+        if (previousRequest != RequestWrapper.EmptyRequest)
+        {
+            initialRequest = previousRequest.Json;
+        }
+        
         var concreteRequest = await GetConcreteRequest(sequence);
-        var mergedRequest = _defaultRequest.MergeWith(concreteRequest);
+        var mergedRequest = initialRequest.MergeWith(concreteRequest);
 
         return await _requestStreamer.StreamToMemoryAsync(mergedRequest, previousResultPath);
     }

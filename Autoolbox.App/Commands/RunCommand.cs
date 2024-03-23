@@ -4,12 +4,15 @@ using Autoolbox.App.Overrides;
 using Autoolbox.App.Services.Abstraction;
 using Autoolbox.App.Services.Implementation;
 using Autoolbox.App.Utility;
+using Autoolbox.App.Wrappers;
 using Newtonsoft.Json.Linq;
 using SonScript2.Core.Compilation.Abstraction;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace Autoolbox.App.Commands;
+
+public record CachedProgress(JObject? PreviousRequest, string PreviousResult);
 
 public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
 {
@@ -25,7 +28,7 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
     private readonly IRequestFactory _requestFactory;
     private readonly IRequestSender _requestSender;
 
-    private readonly Dictionary<int, string> _resultCache = new();
+    private readonly Dictionary<int, CachedProgress> _cache = new();
 
     public RunCommand(IConfigReader configReader, ICompiler compiler,
         IRequestFactory requestFactory, IRequestSender requestSender)
@@ -48,29 +51,43 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
         AnsiConsole.WriteLine("Generation started...");
         await LeveledProgressHandler.Handle(sequences.Length, async (level, progressTask) =>
         {
-            var sequence = sequences[level];
-
-            var context = GetSequenceContext(sequence);
-            var directory = HandleDirectory(settings.OutputPath, level);
-            context.Level = level;
-            
-            for (var i = 0; i < settings.Count; i++)
+            try
             {
-                context.Iteration = i;
-                await GenerateFromSequence(sequence, context, directory);
-                progressTask.Increment(deltaProgress);
-            }
+                var sequence = sequences[level];
+
+                var context = GetSequenceContext(sequence);
+                var directory = HandleDirectory(settings.OutputPath, level);
+                context.Level = level;
             
-            progressTask.StopTask();
+                for (var i = 0; i < settings.Count; i++)
+                {
+                    var requestWrapper = TryGetPreviousRequest(i, out var request) ? 
+                        new RequestWrapper(request!) : 
+                        RequestWrapper.EmptyRequest;
+
+                    context.PreviousRequest = requestWrapper;
+                    context.Iteration = i;
+                    
+                    await GenerateFromSequence(sequence, requestWrapper, context, directory);
+                    progressTask.Increment(deltaProgress);
+                }
+            
+                progressTask.StopTask();
+            }
+            catch (Exception e)
+            {
+                AnsiConsole.WriteException(e);
+                throw;
+            }
         });
         
         return 0;
     }
 
-    private async Task GenerateFromSequence(INodeSequence sequence, AutomaticContext context, string directory)
+    private async Task GenerateFromSequence(INodeSequence sequence, RequestWrapper previousRequestWrapper, AutomaticContext context, string directory)
     {
-        var previousResult = GetPreviousResult(_resultCache, context.Iteration);
-        var requestOption = await _requestFactory.CreateAsync(sequence, previousResult);
+        var previousResult = GetPreviousResult(context.Iteration);
+        var requestOption = await _requestFactory.CreateAsync(sequence, previousRequestWrapper, previousResult);
 
         if (!requestOption.IsValid)
         {
@@ -80,15 +97,26 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
         var result = await SendRequest(requestOption);
         var path = await SaveResult(directory, $"{context.Iteration:0000}.png", result);
 
-        _resultCache[context.Iteration] = path;
+        _cache[context.Iteration] = new CachedProgress(requestOption.RequestJson!, path);
     }
 
-    private static string GetPreviousResult(IReadOnlyDictionary<int, string> cache, int index)
+    private bool TryGetPreviousRequest(int index, out JObject? request)
     {
-        if (cache.TryGetValue(index, out var value))
-            return value;
-        
-        return string.Empty;
+        if(_cache.TryGetValue(index, out var value))
+        {
+            request = value.PreviousRequest;
+            return true;
+        }
+
+        request = null;
+        return false;
+    }
+
+    private string GetPreviousResult(int index)
+    {
+        return _cache.TryGetValue(index, out var value) ? 
+            value.PreviousResult : 
+            string.Empty;
     }
 
     private static async Task<string> SaveResult(string directory, string filename, string result)

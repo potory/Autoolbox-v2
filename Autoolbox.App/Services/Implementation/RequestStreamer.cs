@@ -24,7 +24,7 @@ public class RequestStreamer : IRequestStreamer
     {
         if (!RequireInjection(request))
         {
-            return new RequestOption(await StreamToMemoryAsync(request), RequestType.TextToImage);
+            return new RequestOption(request, await StreamToMemoryAsync(request), RequestType.TextToImage);
         }
 
         if (string.IsNullOrEmpty(imagePath) || !File.Exists(imagePath))
@@ -33,7 +33,7 @@ public class RequestStreamer : IRequestStreamer
         }
             
         var stream = await StreamToMemoryWithInjectionAsync(request, imagePath);
-        return new RequestOption(stream, RequestType.ImageToImage);
+        return new RequestOption(request, stream, RequestType.ImageToImage);
     }
 
     private async Task<Stream> StreamToMemoryAsync(JObject request)

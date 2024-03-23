@@ -1,4 +1,5 @@
 ﻿using Autoolbox.App.Services.Abstraction;
+using Newtonsoft.Json.Linq;
 
 namespace Autoolbox.App.Services.Implementation;
 
@@ -10,10 +11,12 @@ public class RequestOption
 
     public RequestType RequestType { get; }
     public Stream? RequestStream { get; }
+    public JObject? RequestJson { get; }
 
 
-    public RequestOption(Stream stream, RequestType type)
+    public RequestOption(JObject json, Stream stream, RequestType type)
     {
+        RequestJson = json;
         RequestStream = stream;
         RequestType = type;
     }
