@@ -21,6 +21,7 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
         [CommandArgument(0, "<Config>")] public required string ConfigPath { get; set; }
         [CommandArgument(1, "<Output>")] public required string OutputPath { get; set; }
         [CommandArgument(2, "[Count]")] public int Count { get; set; }
+        [CommandOption("--pausing")] public bool? Pausing { get; set; }
     }
 
     private readonly IConfigReader _configReader;
@@ -73,6 +74,14 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
                 }
             
                 progressTask.StopTask();
+
+                if (settings.Pausing.HasValue && 
+                    settings.Pausing.Value &&
+                    level != sequences.Length - 1)
+                {
+                    AnsiConsole.WriteLine("Press any key to move to next level");
+                    Console.ReadKey();
+                }
             }
             catch (Exception e)
             {
@@ -80,7 +89,7 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
                 throw;
             }
         });
-        
+
         return 0;
     }
 
