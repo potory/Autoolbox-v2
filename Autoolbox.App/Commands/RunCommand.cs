@@ -45,10 +45,29 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
     
     public override async Task<int> ExecuteAsync(CommandContext commandContext, Settings settings)
     {
+        string configPath = string.Empty;
+
+        if (File.Exists(settings.ConfigPath))
+        {
+            configPath = settings.ConfigPath;
+        }
+        else if (Directory.Exists(settings.ConfigPath))
+        {
+            string[] configs = Directory.GetFiles(settings.ConfigPath, "*.sonscript");
+            
+            var configName = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Select config:")
+                    .PageSize(10)!
+                    .AddChoices(configs.Select(s => Path.GetFileName(s)!)));
+
+            configPath = configs.Single(x => Path.GetFileName(x) == configName);
+        }
+        
         var deltaProgress = 1 / (float)settings.Count * 100;
 
         AnsiConsole.WriteLine("Getting config segments...");
-        var segments = GetConfigSegments(settings.ConfigPath);
+        var segments = GetConfigSegments(configPath);
         AnsiConsole.WriteLine("Getting config sequences...");
         var sequences = GetConfigSequences(segments).ToArray();
 
