@@ -14,12 +14,12 @@ public class SortRunner : ISortRunner
         _sortingApplicationPath = config[Contracts.Config.ExternalDependencies.SortingApplicationPath];
     }
 
-    public void Run(string directory, string outputPath)
+    public async Task<bool> Run(string directory, string outputPath)
     {
         if (string.IsNullOrEmpty(_sortingApplicationPath))
         {
-            AnsiConsole.Write("WARNING: externalDependencies:sortingApplicationPath is not setted in appconfig.json to run sorting");
-            return;
+            AnsiConsole.WriteLine("WARNING: externalDependencies:sortingApplicationPath is not setted in appconfig.json to run sorting");
+            return false;
         }
         
         directory = Path.GetFullPath(directory);
@@ -28,6 +28,10 @@ public class SortRunner : ISortRunner
         var p = new Process();
         p.StartInfo.FileName = _sortingApplicationPath;
         p.StartInfo.Arguments = $"{directory} {outputPath}";
+        p.StartInfo.WindowStyle = ProcessWindowStyle.Maximized;
         p.Start();
+
+        await p.WaitForExitAsync();
+        return true;
     }
 }

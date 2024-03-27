@@ -2,5 +2,5 @@
 
 public interface ISortRunner
 {
-    public void Run(string directory, string outputPath);
+    public Task<bool> Run(string directory, string outputPath);
 }

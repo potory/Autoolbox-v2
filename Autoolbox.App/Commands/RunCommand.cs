@@ -83,13 +83,12 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
                     level != sequences.Length - 1)
                 {
 
-                    if (settings.AutorunSort.HasValue && settings.AutorunSort.Value)
+                    if (!settings.AutorunSort.HasValue || !settings.AutorunSort.Value ||
+                        !await _sortRunner.Run(directory, settings.OutputPath))
                     {
-                        _sortRunner.Run(directory, settings.OutputPath);
+                        AnsiConsole.WriteLine("Press any key to move to next level");
+                        Console.ReadKey();
                     }
-                    
-                    AnsiConsole.WriteLine("Press any key to move to next level");
-                    Console.ReadKey();
                 }
             }
             catch (Exception e)
