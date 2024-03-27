@@ -22,22 +22,25 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
         [CommandArgument(1, "<Output>")] public required string OutputPath { get; set; }
         [CommandArgument(2, "[Count]")] public int Count { get; set; }
         [CommandOption("--pausing")] public bool? Pausing { get; set; }
+        [CommandOption("--autorunSort")] public bool? AutorunSort { get; set; }
     }
 
     private readonly IConfigReader _configReader;
     private readonly ICompiler _compiler;
     private readonly IRequestFactory _requestFactory;
     private readonly IRequestSender _requestSender;
+    private readonly ISortRunner _sortRunner;
 
     private readonly Dictionary<int, CachedProgress> _cache = new();
 
     public RunCommand(IConfigReader configReader, ICompiler compiler,
-        IRequestFactory requestFactory, IRequestSender requestSender)
+        IRequestFactory requestFactory, IRequestSender requestSender, ISortRunner sortRunner)
     {
         _configReader = configReader;
         _compiler = compiler;
         _requestFactory = requestFactory;
         _requestSender = requestSender;
+        _sortRunner = sortRunner;
     }
     
     public override async Task<int> ExecuteAsync(CommandContext commandContext, Settings settings)
@@ -79,6 +82,12 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
                     settings.Pausing.Value &&
                     level != sequences.Length - 1)
                 {
+
+                    if (settings.AutorunSort.HasValue && settings.AutorunSort.Value)
+                    {
+                        _sortRunner.Run(directory, settings.OutputPath);
+                    }
+                    
                     AnsiConsole.WriteLine("Press any key to move to next level");
                     Console.ReadKey();
                 }

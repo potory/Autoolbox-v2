@@ -20,5 +20,10 @@ public static class Contracts
         {
             public const string PreviousResult = "injection:previousResult";
         }
+        
+        public static class ExternalDependencies
+        {
+            public const string SortingApplicationPath = "externalDependencies:sortingApplicationPath";
+        }
     }
 }

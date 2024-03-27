@@ -11,5 +11,8 @@
   },
   "injection": {
     "previousResult": "#PREVIOUS_RESULT_INJECT#"
+  },
+  "externalDependencies": {
+    "sortingApplicationPath": ""
   }
 }

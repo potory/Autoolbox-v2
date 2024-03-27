@@ -35,6 +35,7 @@ public static class ServicesInstaller
         collection.AddTransient<IRequestStreamer, RequestStreamer>();
         collection.AddTransient<IRequestSender, RequestSender>();
         collection.AddTransient<ILogger, Logger>();
+        collection.AddTransient<ISortRunner, SortRunner>();
         
         return collection;
     }
