@@ -9,6 +9,30 @@ public class ConfigReader : IConfigReader
     private readonly StringBuilder _sb = new();
     private readonly Brackets _brackets = new();
 
+    public string ReadInitFunction(string source)
+    {
+        source = source.Trim();
+
+        if (source[0] != '<' || source[1] != '{')
+        {
+            return string.Empty;
+        }
+        
+        _sb.Clear();
+
+        int index = 0;
+
+        while (!(source[index] == '}' && 
+                 source[index+1] == '>'))
+        {
+            _sb.Append(source[index]);
+            index++;
+        }
+
+        _sb.Append("}>");
+        return _sb.ToString();
+    }
+
     public IEnumerable<string> Read(string source)
     {
         _sb.Clear();

@@ -1,4 +1,5 @@
-﻿using Autoolbox.App.Configuration.Abstraction;
+﻿using System.Text;
+using Autoolbox.App.Configuration.Abstraction;
 using Autoolbox.App.Exceptions;
 using Autoolbox.App.Overrides;
 using Autoolbox.App.Services.Abstraction;
@@ -65,9 +66,25 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
         }
         
         var deltaProgress = 1 / (float)settings.Count * 100;
+        var configContent = await File.ReadAllTextAsync(configPath);
 
+        AnsiConsole.WriteLine("Reading init function...");
+        var initFunction = GetInitFunction(configContent);
+        
+        if (!string.IsNullOrEmpty(initFunction))
+        {
+            AnsiConsole.WriteLine("Evaluating init function...");
+            var initSequence = _compiler.Compile(initFunction);
+            await initSequence!.Evaluate(new StringBuilder());
+            configContent = configContent.Replace(initFunction, string.Empty);
+        }
+        else
+        {
+            AnsiConsole.WriteLine("No init function found...");
+        }
+        
         AnsiConsole.WriteLine("Getting config segments...");
-        var segments = GetConfigSegments(configPath);
+        var segments = GetConfigSegments(configContent);
         AnsiConsole.WriteLine("Getting config sequences...");
         var sequences = GetConfigSequences(segments).ToArray();
 
@@ -184,9 +201,13 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings>
     private static AutomaticContext GetSequenceContext(INodeSequence sequence) => 
         sequence.Context as AutomaticContext ?? throw new Exception();
 
-    private IEnumerable<string> GetConfigSegments(string configPath)
+    private string GetInitFunction(string configContent)
     {
-        var configContent = File.ReadAllText(configPath);
+        return _configReader.ReadInitFunction(configContent);
+    }
+
+    private IEnumerable<string> GetConfigSegments(string configContent)
+    {
         return _configReader.Read(configContent);
     }
 
