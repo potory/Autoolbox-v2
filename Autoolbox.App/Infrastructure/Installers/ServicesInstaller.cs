@@ -11,6 +11,7 @@ using SonScript2.Core.Compilation.Implementation;
 using SonScript2.Core.Evaluation;
 using SonScript2.Core.Evaluation.Abstraction;
 using SonScript2.Core.Evaluation.Implementation;
+using SonScript2.Core.Services;
 
 namespace Autoolbox.App.Infrastructure.Installers;
 
@@ -30,6 +31,18 @@ public static class ServicesInstaller
 
     public static IServiceCollection AddAutomaticDependencies(this IServiceCollection collection)
     {
+        collection.AddSingleton<IRandomService>(cfg =>
+        {
+            var config = cfg.GetService<IConfiguration>();
+            var seedConfig = config!["seed"];
+
+            if (string.IsNullOrEmpty(seedConfig) || !int.TryParse(seedConfig, out var seed) || seed == -1)
+            {
+                seed = Random.Shared.Next();
+            }
+
+            return new RandomService(seed);
+        });
         collection.AddTransient<IConfigReader, ConfigReader>();
         collection.AddTransient<IRequestFactory, RequestFactory>();
         collection.AddTransient<IRequestStreamer, RequestStreamer>();
