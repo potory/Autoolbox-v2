@@ -59,6 +59,19 @@ public static class ServicesInstaller
 
         collection.AddTransient<IDecomposer, DefaultDecomposer>();
         collection.AddTransient<INodeFactory, DefaultNodeFactory>();
+        collection.AddSingleton<IPluginService>(cfg =>
+        {
+            var config = cfg.GetService<IConfiguration>();
+            var pluginDirectory = config!["pluginDirectory"];
+
+            if (string.IsNullOrEmpty(pluginDirectory) || 
+                !Directory.Exists(pluginDirectory))
+            {
+                return new NoPluginService();
+            }
+
+            return new PluginService(pluginDirectory);
+        });
         collection.AddTransient<IContextFactory, AutomaticContextFactory>();
         collection.AddTransient<ICompiler, DefaultCompiler>();
         collection.AddSingleton<ILibrary, DefaultLibrary>();

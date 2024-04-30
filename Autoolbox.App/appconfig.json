@@ -13,6 +13,8 @@
     "previousResult": "#PREVIOUS_RESULT_INJECT#"
   },
   "externalDependencies": {
-    "sortingApplicationPath": ""
-  }
+    "sortingApplicationPath": null
+  },
+  "seed": -1,
+  "pluginDirectory": "../Plugins"
 }
